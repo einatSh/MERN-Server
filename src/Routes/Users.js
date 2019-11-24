@@ -15,17 +15,6 @@ router.get("/", async (req, res) => {
     }
 })
 
-// login user by email and password - route localhost:5000/users/login
-router.get("/login", async (req, res) => {
-    res.send("we are on login for user " + req.params.firstName + req.params.lastName);
-    try{
-        const getuser = await user.findById(req.params.email);
-        res.json(getuser);
-    }catch(err) {
-        console.log(err);
-    }
-})
-
 // register a new user - route localhost:5000/users/register
 router.post("/register", async (req,res) => {
     const newUser = new user({
@@ -37,10 +26,51 @@ router.post("/register", async (req,res) => {
     })
 
     try{
-        const savedUser = await newUser.save();
-        res.json(savedUser);
+        // make sure email is unique - if email exists, user will not be added
+        const userExist = await user.findOne({email: req.body.email});
+        console.log(userExist);
+        // if the user doesn't exist - return result of true (user was added to db)
+        if(userExist === null){
+            const savedUser = await newUser.save();
+            res.json({data: true});
+        }
+        // else return result of false
+        else {
+            res.json({data: false});
+        }
     }catch(err){
-        res.status(422).json("duplicate key error")
+        console.log(err);
+    }
+})
+
+
+// login user by email and password - route localhost:5000/users/login
+router.get("/login", async (req, res) => {
+    try{
+        const userExist = await user.find({email: req.body.email});
+        console.log(userExist);
+        const resUser = userExist === null ? null : {
+                                                        firstName: userExist.firstName,
+                                                        lastName: userExist.lastName,
+                                                        email: userExist.email,
+                                                        userName: userExist.userName,
+                                                        password: userExist.password,
+                                                        isAdmin: false,
+                                                        passMismatch: false
+                                                    };
+
+        if(resUser != null){
+            if(req.body.password != userExist.password){
+                resUser.passMismatch = true;
+            }
+            else if(userExist._v == 0){
+                resUser.isAdmin = true;
+            } 
+        }
+        res.json({user: resUser});
+    }
+    catch(err) {
+        console.log(err);
     }
 })
 
