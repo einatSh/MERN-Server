@@ -1,5 +1,11 @@
 const mongos = require("mongoose");
 const schem = mongos.Schema;
+// const AutoIncrementFactory = require('mongoose-sequence');
+// const configKey = require("../Config/Keys");
+
+// const connection = mongos.createConnection(configKey.mongoURI);
+
+// const AutoIncrement = AutoIncrementFactory(connection);
 
 const userSchem = new schem({
     firstName: {
@@ -13,7 +19,6 @@ const userSchem = new schem({
     email: {
         type: String,
         required: true
-        // unique: true
     },
     userName: {
         type: String,
@@ -25,4 +30,7 @@ const userSchem = new schem({
     }
 });
 
+//userSchem.plugin(AutoIncrement, {inc_feild: "id"});
+
 module.exports = user = mongos.model("user", userSchem);
+

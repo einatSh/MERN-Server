@@ -9,68 +9,59 @@ const user = require("../Models/User");
 router.get("/", async (req, res) => {
     try{
         const users = await user.find();
-        res.json(users);
+        res.json({users: users});
     }catch(err){
-        console.log(err);
+        res.status(200).json({message: err});
     }
 })
 
 // register a new user - route localhost:5000/users/register
 router.post("/register", async (req,res) => {
-    const newUser = new user({
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        email: req.body.email,
-        userName: req.body.userName,
-        password: req.body.password
-    })
-
     try{
+        // get current number of records (registered users)
+        //let count = await user.countDocuments().catch(err => console.log(err));
+        // init new user 
+        const newUser = new user({
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.email,
+            userName: req.body.userName,
+            password: req.body.password
+        });
+
         // make sure email is unique - if email exists, user will not be added
-        const userExist = await user.findOne({email: req.body.email});
-        console.log(userExist);
+        const existingUser = await user.findOne({email: req.body.email});
+        console.log(existingUser);
         // if the user doesn't exist - return result of true (user was added to db)
-        if(userExist === null){
-            const savedUser = await newUser.save();
-            res.json({data: true});
+        if(existingUser === null){
+            await newUser.save().then(() => {
+                currIndex++;
+                res.json({userAdded: true});
+            });
         }
         // else return result of false
         else {
-            res.json({data: false});
+            res.json({userAdded: false});
         }
     }catch(err){
-        console.log(err);
+        res.status(200).json({message: err});
     }
 })
 
 
 // login user by email and password - route localhost:5000/users/login
-router.get("/login", async (req, res) => {
+router.post("/login", async (req, res) => {
     try{
-        const userExist = await user.find({email: req.body.email});
-        console.log(userExist);
-        const resUser = userExist === null ? null : {
-                                                        firstName: userExist.firstName,
-                                                        lastName: userExist.lastName,
-                                                        email: userExist.email,
-                                                        userName: userExist.userName,
-                                                        password: userExist.password,
-                                                        isAdmin: false,
-                                                        passMismatch: false
-                                                    };
-
-        if(resUser != null){
-            if(req.body.password != userExist.password){
-                resUser.passMismatch = true;
-            }
-            else if(userExist._v == 0){
-                resUser.isAdmin = true;
-            } 
+        const dbUser = await user.findOne({email: req.body.email});
+        if(req.body.password != dbUser.password){
+            res.json({user: null});
         }
-        res.json({user: resUser});
+        else {
+            res.json({user: dbUser});
+        }
     }
     catch(err) {
-        console.log(err);
+        res.status(200).json({message: err});
     }
 })
 

@@ -20,6 +20,7 @@
     "mongodb": "3.3.3",
     "body-parser": "1.19.0",
     "mongoose": "5.7.8",
-    "bcrypt": "^3.0.7"
+    "bcrypt": "^3.0.7",
+    "mongoose-sequence": "5.2.2"
   }
 }
