@@ -1,11 +1,8 @@
+// mongoose user schema class
 const mongos = require("mongoose");
 const schem = mongos.Schema;
-// const AutoIncrementFactory = require('mongoose-sequence');
-// const configKey = require("../Config/Keys");
-
-// const connection = mongos.createConnection(configKey.mongoURI);
-
-// const AutoIncrement = AutoIncrementFactory(connection);
+const bcrypt = require("bcryptjs");
+var salt = bcrypt.genSaltSync(10);
 
 const userSchem = new schem({
     firstName: {
@@ -27,10 +24,48 @@ const userSchem = new schem({
     password: {
         type: String,
         required: true
+    },
+    isDeleted: {
+        type: Boolean,
+        required: true,
+        default: false
     }
 });
 
-//userSchem.plugin(AutoIncrement, {inc_feild: "id"});
+// hash user password on every new save 
+userSchem.pre("save", function(next) {
+    var user = this;
 
-module.exports = user = mongos.model("user", userSchem);
+    // only hash if the password is new or changed
+    if(!user.isModified("password")){
+        return next();
+    }
+    
+    // generate a salt
+    bcrypt.genSalt(10, (err, salt) => {
+        if(err){
+            return next(err);
+        }
+
+        // hash the password
+        bcrypt.hash(user.password, salt, (err, hash) => {
+            if(err){
+                return next(err);
+            }
+            user.password = hash;
+            next();
+        })
+    })
+});
+
+userSchem.methods.isValid = (password, hash, cb) => {
+    bcrypt.compare(password, hash, (err, isMatch) => {
+        if(err){
+            return cb(err);
+        }
+        cb(null, isMatch);
+    })
+}
+
+module.exports = User = mongos.model("User", userSchem);
 
